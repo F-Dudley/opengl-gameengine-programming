@@ -1,16 +1,12 @@
 #pragma once
 
-#include <iostream>
-#include <GL\glew.h>
-#include <SDL.h>
-#include <SDL_opengl.h>
+#include <glm/gtc/type_ptr.hpp>
 
+#include "Camera.h"
 #include "GameObject.h"
 #include "Utils.h"
 
-
-
-class TriangleRenderer {
+class TriangleRenderer : public GameObject {
 public:
 
 private:
@@ -23,7 +19,6 @@ private:
 
 public:
 	TriangleRenderer() {
-
 		
 	}
 
@@ -38,20 +33,29 @@ public:
 			0.0f, 1.0f
 		};
 
+		// Creating the Vertex Shader.
 		GLuint _vertexShader = glCreateShader(GL_VERTEX_SHADER);
 
+		// Shader Code
 		const GLchar* _p_V_ShaderCode[] = {
 			"#version 140\n"
-			"in vec2 vertexPos2D;\n"
+			"in vec2 vertexPos2D\n"
+			"uniform mat4 transform;\n"
+			"uniform mat4 view;\n"
+			"uniform mat4 projection;\n"
 			"void main() {\n"
-			"gl_Position = vec4(vertexPos2D.x, vertexPos2D.y, 0, 1);\n"
+			"vec4 v4 = vec4(vertexPos2D.x, vertexPos2D.y, 0, 1);\n"
+			"gl_Position = v4;\n"
 			"}\n"
 		};
 
+		// Copying Shader Source to OpenGL.
 		glShaderSource(_vertexShader, 1, _p_V_ShaderCode, NULL);
 
+		// Compiling Shader.
 		glCompileShader(_vertexShader);
 
+		// Check for Shader Compile Errors.
 		GLint _isShaderCompiledOK = GL_FALSE;
 
 		glGetShaderiv(_vertexShader, GL_COMPILE_STATUS, &_isShaderCompiledOK);
@@ -104,13 +108,16 @@ public:
 			return false;
 		}
 
-		vertexPos2DLocation = glGetAttribLocation(programID, "vertesPos2D");
-
+		vertexPos2DLocation = glGetAttribLocation(programID, "vertexPos2D");
 		if (vertexPos2DLocation == -1) {
 			std::cerr << "Problem getting vertex2DPos" << std::endl;
 
 			return false;
 		}
+
+		transformUniformId = glGetUniformLocation(programID, "transform");
+		viewUniformId = glGetUniformLocation(programID, "view");
+		projectionUniformId = glGetUniformLocation(programID, "projection");
 
 		glGenBuffers(1, &vboTriangle);
 		glBindBuffer(GL_ARRAY_BUFFER, vboTriangle);
@@ -125,11 +132,21 @@ public:
 	}
 
 	void update() {
+		transformationMatrix = glm::mat4(1.0f);
 
+		transformationMatrix = glm::translate(transformationMatrix, position);
+		transformationMatrix = glm::rotate(transformationMatrix, glm::radians(rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+		transformationMatrix = glm::rotate(transformationMatrix, glm::radians(rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+		transformationMatrix = glm::rotate(transformationMatrix, glm::radians(rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+		transformationMatrix = glm::scale(transformationMatrix, scale);
 	}
 
-	void draw() {
+	void draw(Camera *_p_camera) {
 		glUseProgram(programID);
+
+		glUniformMatrix4fv(transformUniformId, 1, GL_FALSE, glm::value_ptr(transformationMatrix));
+		glUniformMatrix4fv(viewUniformId, 1, GL_FALSE, glm::value_ptr(_p_camera->getViewMatrix()));
+		glUniformMatrix4fv(projectionUniformId, 1, GL_FALSE, glm::value_ptr(_p_camera->getProjectionMatrix()));
 
 		glVertexAttribPointer(vertexPos2DLocation, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GL_FLOAT), nullptr);
 

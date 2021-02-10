@@ -49,6 +49,15 @@ bool GameLoop::Init() {
 		return false;
 	}
 
+	p_camera = new Camera(45.0f, 0.1f, 100.0f, 640.0f / 480.0f);
+	if (p_camera->init() != true) {
+		std::cerr << "Camera Cannot be Initialized" << std::endl;
+	}
+
+	p_camera->setPosition(0, 0, 1);
+	
+	p_camera->lookAtPosition(0, 0, 0);
+
 	p_triangle1 = new TriangleRenderer();
 	if (p_triangle1->init() != true) {
 		std::cerr << "Triangle Renderer could not be Initialized" << std::endl;
@@ -69,14 +78,14 @@ bool GameLoop::ProcessInput() {
 }
 
 void GameLoop::Update() {
-
+	p_triangle1->update();
 }
 
 void GameLoop::Draw() {
 	glClearColor(0.4f, 0.6f, 1.0f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
-	p_triangle1->draw();
+	p_triangle1->draw(p_camera);
 
 	SDL_GL_SwapWindow(p_window);
 }
@@ -84,6 +93,10 @@ void GameLoop::Draw() {
 void GameLoop::Clean() {
 
 	p_triangle1->clean();
+	delete p_triangle1;
+
+	p_camera->clean();
+	delete p_camera;
 
 	// ----- //
 	SDL_GL_DeleteContext(glContext);
