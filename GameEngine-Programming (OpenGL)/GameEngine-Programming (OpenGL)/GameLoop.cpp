@@ -49,6 +49,11 @@ bool GameLoop::Init() {
 		return false;
 	}
 
+	p_triangle1 = new TriangleRenderer();
+	if (p_triangle1->init() != true) {
+		std::cerr << "Triangle Renderer could not be Initialized" << std::endl;
+	}
+
 	return true;
 }
 
@@ -68,10 +73,19 @@ void GameLoop::Update() {
 }
 
 void GameLoop::Draw() {
+	glClearColor(0.4f, 0.6f, 1.0f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
 
+	p_triangle1->draw();
+
+	SDL_GL_SwapWindow(p_window);
 }
 
 void GameLoop::Clean() {
+
+	p_triangle1->clean();
+
+	// ----- //
 	SDL_GL_DeleteContext(glContext);
 	glContext = nullptr;
 
