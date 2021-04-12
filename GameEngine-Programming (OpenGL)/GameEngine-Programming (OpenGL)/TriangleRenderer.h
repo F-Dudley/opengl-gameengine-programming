@@ -4,15 +4,16 @@
 
 #include "Camera.h"
 #include "GameObject.h"
+#include "Renderer.h"
 #include "Utils.h"
 
-class TriangleRenderer : public GameObject {
+class TriangleRenderer : public Renderer {
 public:
 
 private:
 	GLuint programID;
 
-	GLint vertexPos2DLocation;
+	GLint vertexPos3DLocation;
 
 	GLuint vboTriangle;
 
@@ -27,11 +28,11 @@ public:
 	}
 
 	bool init() {
-		GLfloat vertexData[] = {
-			-1.0f, 0.0f,
-			1.0f, 0.0f,
-			0.0f, 1.0f
-		};
+		shapeVerticies.insert(shapeVerticies.begin(), {
+			Vertex(-1.0f, 0.0f, 0.0f),
+			Vertex(1.0f, 0.0f, 0.0f),
+			Vertex(0.0f, 1.0f, 0.0f)
+		});
 
 		// Creating the Vertex Shader.
 		GLuint _vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -39,12 +40,13 @@ public:
 		// Shader Code
 		const GLchar* _p_V_ShaderCode[] = {
 			"#version 140\n"
-			"in vec2 vertexPos2D\n"
+			"in vec2 vertexPos3D;\n"
 			"uniform mat4 transform;\n"
 			"uniform mat4 view;\n"
 			"uniform mat4 projection;\n"
 			"void main() {\n"
-			"vec4 v4 = vec4(vertexPos2D.x, vertexPos2D.y, 0, 1);\n"
+			"vec4 v4 = vec4(vertexPos3D.x, vertexPos3D.y, vertexPos3D.z, 1);\n"
+			"v4 = projection * view * transform * v4;\n"
 			"gl_Position = v4;\n"
 			"}\n"
 		};
@@ -108,8 +110,8 @@ public:
 			return false;
 		}
 
-		vertexPos2DLocation = glGetAttribLocation(programID, "vertexPos2D");
-		if (vertexPos2DLocation == -1) {
+		vertexPos3DLocation = glGetAttribLocation(programID, "vertexPos3D");
+		if (vertexPos3DLocation == -1) {
 			std::cerr << "Problem getting vertex2DPos" << std::endl;
 
 			return false;
@@ -122,7 +124,7 @@ public:
 		glGenBuffers(1, &vboTriangle);
 		glBindBuffer(GL_ARRAY_BUFFER, vboTriangle);
 
-		glBufferData(GL_ARRAY_BUFFER, sizeof(vertexData), vertexData, GL_STATIC_DRAW);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(shapeVerticies.data()), shapeVerticies.data(), GL_STATIC_DRAW);
 		
 		return true;
 	}
@@ -148,15 +150,16 @@ public:
 		glUniformMatrix4fv(viewUniformId, 1, GL_FALSE, glm::value_ptr(_p_camera->getViewMatrix()));
 		glUniformMatrix4fv(projectionUniformId, 1, GL_FALSE, glm::value_ptr(_p_camera->getProjectionMatrix()));
 
-		glVertexAttribPointer(vertexPos2DLocation, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GL_FLOAT), nullptr);
+		glVertexAttribPointer(vertexPos3DLocation, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), nullptr);
 
-		glEnableVertexAttribArray(vertexPos2DLocation);
+		glEnableVertexAttribArray(vertexPos3DLocation);
 
 		glBindBuffer(GL_ARRAY_BUFFER, vboTriangle);
 
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		
+		glDrawArrays(GL_TRIANGLES, 0, sizeof(shapeVerticies.data()) / sizeof(Vertex));
 
-		glDisableVertexAttribArray(vertexPos2DLocation);
+		glDisableVertexAttribArray(vertexPos3DLocation);
 
 		glUseProgram(0);
 	}

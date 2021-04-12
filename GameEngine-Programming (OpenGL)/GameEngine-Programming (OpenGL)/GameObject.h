@@ -29,7 +29,6 @@ public:
 		rotation.x = rotation.y = position.z = 0.0f;
 		scale.x = scale.y = scale.z = 1.0f;
 
-
 	}
 
 	virtual ~GameObject() {
@@ -40,7 +39,7 @@ public:
 
 	virtual void processInput() = 0;
 	virtual void update() = 0;
-	virtual void draw(Camera* _p_camera) = 0;
+	virtual void draw(Camera &_p_camera) = 0;
 
 	virtual void clean() = 0;
 
